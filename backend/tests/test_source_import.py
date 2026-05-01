@@ -9,7 +9,7 @@ from letai_factbase.main import app
 def test_source_import_creates_source_record() -> None:
     init_db()
     client = TestClient(app)
-    payload = "测试材料：source import 自动化测试。".encode("utf-8")
+    payload = "Test material for source import automation.".encode("utf-8")
 
     response = client.post(
         "/api/sources/import",

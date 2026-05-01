@@ -230,24 +230,24 @@
     <main class="app-shell">
       <aside class="sidebar">
         <h1>Letai Factbase</h1>
-        <button class="active">OCR 审核</button>
+        <button class="active">OCR Review</button>
         <h2>OCR Pages</h2>
         <div id="page-list"></div>
       </aside>
       <section class="review-layout">
         <header class="review-header">
           <div>
-            <h2>OCR 基础高亮审核</h2>
-            <p id="status">加载中</p>
+            <h2>OCR Highlight Review</h2>
+            <p id="status">Loading</p>
           </div>
           <div class="header-actions">
-            <button id="refresh">刷新</button>
-            <button id="run-ocr">运行 OCR</button>
+            <button id="refresh">Refresh</button>
+            <button id="run-ocr">Run OCR</button>
           </div>
         </header>
         <div class="review-grid">
           <div class="page-preview">
-            <div id="page-stage" class="empty-state">暂无页面</div>
+            <div id="page-stage" class="empty-state">No page available</div>
           </div>
           <aside class="candidate-panel">
             <h3>OCR Blocks</h3>
@@ -256,11 +256,11 @@
         </div>
         <div class="lower-grid">
           <section class="list-panel">
-            <h3>Chunks · 自动候选事实提取</h3>
+            <h3>Chunks · Automatic Candidate Extraction</h3>
             <div id="chunk-list"></div>
           </section>
           <section class="list-panel">
-            <h3>候选事实 / LLM 调用</h3>
+            <h3>Candidate Facts / LLM Calls</h3>
             <div id="candidate-list"></div>
             <div id="llm-log-list"></div>
           </section>
@@ -317,7 +317,7 @@
       }
 
       async function refresh() {
-        setStatus("加载中");
+        setStatus("Loading");
         const [pages, blocks, evidence, chunks, candidates, llmLogs] = await Promise.all([
           fetchJson("/ocr-pages"),
           fetchJson("/ocr-blocks"),
@@ -333,23 +333,23 @@
         state.candidates = candidates;
         state.llmLogs = llmLogs;
         if (!state.selectedPageUid && pages[0]) state.selectedPageUid = pages[0].ocr_page_uid;
-        setStatus(pages.length ? "已加载" : "暂无 OCR 页面。请先导入文件并 render-pages。");
+        setStatus(pages.length ? "Loaded" : "No OCR pages. Import a file and run render-pages first.");
         render();
       }
 
       async function runOCR() {
         if (!state.selectedPageUid) return;
-        setStatus("OCR 运行中");
+        setStatus("Running OCR");
         await fetchJson(`/ocr-pages/${state.selectedPageUid}/run-ocr`, { method: "POST" });
         await refresh();
-        setStatus("OCR 已完成");
+        setStatus("OCR completed");
       }
 
       async function createCandidate(block) {
         const page = state.pages.find((item) => item.ocr_page_uid === block.ocr_page_uid);
         const evidence = evidenceForBlock(block);
         if (!page || !evidence) {
-          setStatus("未找到该 OCR block 对应 evidence");
+          setStatus("No evidence matched this OCR block");
           return;
         }
         await fetchJson("/candidates", {
@@ -366,17 +366,17 @@
             prompt_version: null,
           }),
         });
-        setStatus("已创建候选事实");
+        setStatus("Candidate fact created");
       }
 
       async function extractCandidates(chunk) {
-        setStatus("LLM 候选事实提取中");
+        setStatus("Extracting candidate facts with LLM");
         const result = await fetchJson(`/chunks/${chunk.chunk_uid}/extract-candidates`, {
           method: "POST",
         });
         await refresh();
         setStatus(
-          `已提取 ${result.candidates_created} 条候选事实，跳过重复 ${result.skipped_duplicates} 条`,
+          `Created ${result.candidates_created} candidates; skipped ${result.skipped_duplicates} duplicates`,
         );
       }
 
@@ -409,7 +409,7 @@
         const page = state.pages.find((item) => item.ocr_page_uid === state.selectedPageUid);
         if (!page) {
           pageStageEl.className = "empty-state";
-          pageStageEl.textContent = "暂无页面";
+          pageStageEl.textContent = "No page available";
           return;
         }
         pageStageEl.className = "image-stage";
@@ -460,7 +460,7 @@
         if (!blocks.length) {
           const empty = document.createElement("p");
           empty.className = "muted";
-          empty.textContent = "当前页面暂无 OCR block。";
+          empty.textContent = "No OCR blocks on the selected page.";
           blockListEl.appendChild(empty);
           return;
         }
@@ -479,13 +479,13 @@
             <p>${escapeHtml(block.text)}</p>
             <dl>
               <dt>Block</dt><dd>${block.ocr_block_uid}</dd>
-              <dt>Evidence</dt><dd>${evidence ? evidence.evidence_uid : "未匹配"}</dd>
+              <dt>Evidence</dt><dd>${evidence ? evidence.evidence_uid : "Not matched"}</dd>
             </dl>
-            <div class="actions"><button type="button">创建候选事实</button></div>
+            <div class="actions"><button type="button">Create candidate fact</button></div>
           `;
           card.querySelector("button").onclick = (event) => {
             event.stopPropagation();
-            createCandidate(block).catch((error) => setStatus(`创建候选事实失败：${error.message}`));
+            createCandidate(block).catch((error) => setStatus(`Candidate creation failed: ${error.message}`));
           };
           blockListEl.appendChild(card);
         });
@@ -496,7 +496,7 @@
         if (!state.chunks.length) {
           const empty = document.createElement("p");
           empty.className = "muted";
-          empty.textContent = "暂无 chunk。请先导入文件并 parse。";
+          empty.textContent = "No chunks. Import a file and run parse first.";
           chunkListEl.appendChild(empty);
           return;
         }
@@ -509,10 +509,10 @@
               <dt>Source</dt><dd>${chunk.source_uid}</dd>
             </dl>
             <p class="excerpt">${escapeHtml(chunk.text.slice(0, 600))}</p>
-            <div class="actions"><button type="button">LLM 提取候选事实</button></div>
+            <div class="actions"><button type="button">Extract candidates with LLM</button></div>
           `;
           card.querySelector("button").onclick = () =>
-            extractCandidates(chunk).catch((error) => setStatus(`LLM 提取失败：${error.message}`));
+            extractCandidates(chunk).catch((error) => setStatus(`LLM extraction failed: ${error.message}`));
           chunkListEl.appendChild(card);
         });
       }
@@ -521,7 +521,7 @@
         candidateListEl.innerHTML = "";
         const title = document.createElement("p");
         title.className = "muted";
-        title.textContent = `候选事实：${state.candidates.length} 条`;
+        title.textContent = `Candidate facts: ${state.candidates.length}`;
         candidateListEl.appendChild(title);
         state.candidates.slice(-6).reverse().forEach((candidate) => {
           const card = document.createElement("article");
@@ -543,7 +543,7 @@
         llmLogListEl.innerHTML = "";
         const title = document.createElement("p");
         title.className = "muted";
-        title.textContent = `LLM 调用：${state.llmLogs.length} 次`;
+        title.textContent = `LLM calls: ${state.llmLogs.length}`;
         llmLogListEl.appendChild(title);
         state.llmLogs.slice(-4).reverse().forEach((log) => {
           const card = document.createElement("article");
@@ -568,11 +568,11 @@
       }
 
       document.getElementById("refresh").onclick = () =>
-        refresh().catch((error) => setStatus(`加载失败：${error.message}`));
+        refresh().catch((error) => setStatus(`Load failed: ${error.message}`));
       document.getElementById("run-ocr").onclick = () =>
-        runOCR().catch((error) => setStatus(`OCR 失败：${error.message}`));
+        runOCR().catch((error) => setStatus(`OCR failed: ${error.message}`));
 
-      refresh().catch((error) => setStatus(`加载失败：${error.message}`));
+      refresh().catch((error) => setStatus(`Load failed: ${error.message}`));
     </script>
   </body>
 </html>

@@ -25,10 +25,10 @@ class FakeExtractionClient:
         return {
             "facts": [
                 {
-                    "proposed_fact_text": "测试主体联系电话为 [REDACTED_PHONE]。",
+                    "proposed_fact_text": "The test entity phone number is [REDACTED_PHONE].",
                     "fact_type": "entity",
                     "tags": ["test", "letai"],
-                    "supporting_quote": "联系电话：[REDACTED_PHONE]",
+                    "supporting_quote": "Phone: [REDACTED_PHONE]",
                 }
             ]
         }
@@ -36,13 +36,13 @@ class FakeExtractionClient:
 
 def test_redact_sensitive_text_masks_common_personal_data() -> None:
     redacted = redact_sensitive_text(
-        "张三，身份证号110101199003072211，电话13812345678，"
-        "银行账号6222021234567890123，住址：北京市朝阳区测试路1号。"
+        "Person A, ID number 110101199003072211, phone 13812345678, "
+        "bank account 6222021234567890123, Address: Test Road 1, Example District."
     )
     assert "110101199003072211" not in redacted.text
     assert "13812345678" not in redacted.text
     assert "6222021234567890123" not in redacted.text
-    assert "北京市朝阳区测试路1号" not in redacted.text
+    assert "Test Road 1, Example District" not in redacted.text
     assert redacted.summary["id_number"] == 1
     assert redacted.summary["phone_number"] == 1
     assert redacted.summary["bank_account"] == 1
@@ -53,8 +53,8 @@ def test_extract_candidates_from_chunk_redacts_logs_and_deduplicates() -> None:
     init_db()
     client = TestClient(app)
     text = (
-        "LLM提取测试：测试主体联系电话：13812345678，"
-        "银行账号6222021234567890123，确认金额为100万元。"
+        "LLM extraction test: test entity phone: 13812345678, "
+        "bank account 6222021234567890123, confirmed amount is 1 million CNY."
     ).encode("utf-8")
     import_response = client.post(
         "/api/sources/import",
@@ -111,7 +111,7 @@ def test_extract_candidates_endpoint_requires_llm_configuration(monkeypatch) -> 
     monkeypatch.setattr(settings, "llm_api_key", "")
     monkeypatch.setattr(settings, "llm_model", "")
     client = TestClient(app)
-    text = "未配置LLM时仍可导入解析，但不能自动提取候选事实。".encode("utf-8")
+    text = "Without LLM configuration, import and parsing still work.".encode("utf-8")
     import_response = client.post(
         "/api/sources/import",
         files={"file": ("llm-not-configured-test.txt", text, "text/plain")},

@@ -7,7 +7,7 @@ from letai_factbase.main import app
 def test_create_and_confirm_candidate_from_evidence() -> None:
     init_db()
     client = TestClient(app)
-    text = "事实候选测试：唐山勒泰测试主体金额为 100 万元。".encode("utf-8")
+    text = "Candidate test: the test entity amount is 1 million CNY.".encode("utf-8")
 
     import_response = client.post(
         "/api/sources/import",
@@ -33,7 +33,7 @@ def test_create_and_confirm_candidate_from_evidence() -> None:
             "source_uid": source_uid,
             "evidence_uid": evidence["evidence_uid"],
             "original_candidate_text": evidence["excerpt"],
-            "proposed_fact_text": "唐山勒泰测试主体金额为 100 万元。",
+            "proposed_fact_text": "The test entity amount is 1 million CNY.",
             "fact_type": "amount",
             "tags": ["test", "waterfall_input"],
             "llm_model": None,
@@ -48,13 +48,13 @@ def test_create_and_confirm_candidate_from_evidence() -> None:
         "/api/candidates/confirm",
         json={
             "candidate_uid": candidate["candidate_uid"],
-            "confirmed_fact_text": "唐山勒泰测试主体金额为人民币 100 万元。",
+            "confirmed_fact_text": "The test entity amount is CNY 1 million.",
             "confirmed_by": "pytest",
-            "edit_reason": "补充币种表述",
+            "edit_reason": "Clarified currency wording",
         },
     )
     assert confirm_response.status_code == 200
     fact = confirm_response.json()
     assert fact["candidate_uid"] == candidate["candidate_uid"]
     assert fact["edited_from_candidate"] is True
-    assert fact["edit_reason"] == "补充币种表述"
+    assert fact["edit_reason"] == "Clarified currency wording"

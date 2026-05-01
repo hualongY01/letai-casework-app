@@ -1,22 +1,21 @@
-# 决策记录
+# Decision Log
 
 ## 2026-04-30
 
-1. 应用定位为本地事实底座，不是 NotebookLM 复制品。
-2. v0.1 主流程确定为：文件导入 → chunk/evidence → 候选事实 → 人工逐条确认 → confirmed FC → 只读 Vault 导出。
-3. 扫描 PDF / 图片 OCR 纳入 v0.1。
-4. OCR 必须本地运行。
-5. OCR 结果必须保留页面图片快照和 bbox。
-6. v0.1 必须提供 OCR 基础高亮审核界面。
-7. v0.1 采用本地 Web 应用形态。
-8. 原始文件复制到 evidence archive。
-9. 归档文件默认不允许物理删除。
-10. 新版 source 创建新 source version，不覆盖旧版本。
-11. 人工确认时允许修改候选事实文本。
-12. confirmed FC 不允许原地覆盖，只允许创建新版本。
-13. 冲突事实不自动裁决。
-14. source 权威等级先内置默认规则，后续允许项目级配置。
-15. 事实分类 schema 采用通用分类 + 勒泰重整专项标签。
-16. v0.1 先做 Fact Gateway mock，不正式接入完整 subagent。
-17. LLM 只处理 chunk，敏感信息默认脱敏。
-
+1. The application is positioned as a local factbase, not a NotebookLM clone.
+2. The v0.1 flow is: file import -> chunk/evidence -> FactCandidate -> item-by-item human confirmation -> confirmed FC -> read-only Vault export.
+3. Scanned PDF and image OCR are included in v0.1.
+4. OCR must run locally.
+5. OCR output must preserve page snapshots and bbox coordinates.
+6. v0.1 must provide a basic OCR highlight review UI.
+7. v0.1 uses a local web application shape.
+8. Original files are copied into the evidence archive.
+9. Archived files are not physically deleted by default.
+10. A new source version creates a new source version and does not overwrite the old one.
+11. Human confirmation may edit candidate fact text.
+12. Confirmed FC records cannot be overwritten in place and may only be superseded by new versions.
+13. Factual conflicts are not auto-resolved.
+14. Source authority levels use built-in defaults first and may become project-configurable later.
+15. The fact schema uses generic categories plus Letai-specific tags.
+16. v0.1 provides only a Fact Gateway mock before full subagent integration.
+17. The LLM processes only chunks, and sensitive information is redacted by default.

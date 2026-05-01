@@ -11,8 +11,8 @@ def _make_xlsx(path: Path) -> bytes:
     workbook = Workbook()
     sheet = workbook.active
     sheet.title = "Claims"
-    sheet.append(["主体", "金额", "说明"])
-    sheet.append(["唐山勒泰测试主体", 1200000, "用于验证 Excel 行解析"])
+    sheet.append(["Entity", "Amount", "Description"])
+    sheet.append(["Letai Test Entity", 1200000, "Validates Excel row parsing"])
     workbook.save(path)
     workbook.close()
     return path.read_bytes()
@@ -48,7 +48,7 @@ def test_xlsx_parse_preserves_sheet_and_row_metadata() -> None:
 
     chunks_response = client.get("/api/chunks")
     chunks = [chunk for chunk in chunks_response.json() if chunk["source_uid"] == source_uid]
-    data_rows = [chunk for chunk in chunks if "唐山勒泰测试主体" in chunk["text"]]
+    data_rows = [chunk for chunk in chunks if "Letai Test Entity" in chunk["text"]]
     assert data_rows
     assert data_rows[0]["sheet_name"] == "Claims"
     assert data_rows[0]["row_start"] == 2

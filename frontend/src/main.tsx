@@ -94,10 +94,10 @@ function App() {
   const [selectedPageUid, setSelectedPageUid] = useState<string>("");
   const [selectedBlockUid, setSelectedBlockUid] = useState<string>("");
   const [imageSize, setImageSize] = useState<ImageSize | null>(null);
-  const [status, setStatus] = useState("加载中");
+  const [status, setStatus] = useState("Loading");
 
   async function refresh() {
-    setStatus("加载中");
+    setStatus("Loading");
     try {
       const [nextPages, nextBlocks, nextEvidence] = await Promise.all([
         fetchJson<OCRPage[]>("/ocr-pages"),
@@ -108,9 +108,9 @@ function App() {
       setBlocks(nextBlocks);
       setEvidence(nextEvidence);
       setSelectedPageUid((current) => current || nextPages[0]?.ocr_page_uid || "");
-      setStatus(nextPages.length ? "已加载" : "暂无 OCR 页面。请先导入文件并 render-pages。");
+      setStatus(nextPages.length ? "Loaded" : "No OCR pages. Import a file and run render-pages first.");
     } catch (error) {
-      setStatus(`加载失败：${error instanceof Error ? error.message : "unknown error"}`);
+      setStatus(`Load failed: ${error instanceof Error ? error.message : "unknown error"}`);
     }
   }
 
@@ -127,20 +127,20 @@ function App() {
 
   async function runOCR() {
     if (!selectedPage) return;
-    setStatus("OCR 运行中");
+    setStatus("Running OCR");
     try {
       await fetchJson(`/ocr-pages/${selectedPage.ocr_page_uid}/run-ocr`, { method: "POST" });
       await refresh();
-      setStatus("OCR 已完成");
+      setStatus("OCR completed");
     } catch (error) {
-      setStatus(`OCR 失败：${error instanceof Error ? error.message : "unknown error"}`);
+      setStatus(`OCR failed: ${error instanceof Error ? error.message : "unknown error"}`);
     }
   }
 
   async function createCandidate(block: OCRBlock) {
     const matchedEvidence = findEvidenceForBlock(block, evidence);
     if (!matchedEvidence || !selectedPage) {
-      setStatus("未找到该 OCR block 对应 evidence");
+      setStatus("No evidence matched this OCR block");
       return;
     }
     try {
@@ -158,9 +158,9 @@ function App() {
           prompt_version: null,
         }),
       });
-      setStatus("已创建候选事实");
+      setStatus("Candidate fact created");
     } catch (error) {
-      setStatus(`创建候选事实失败：${error instanceof Error ? error.message : "unknown error"}`);
+      setStatus(`Candidate creation failed: ${error instanceof Error ? error.message : "unknown error"}`);
     }
   }
 
@@ -169,9 +169,9 @@ function App() {
       <aside className="sidebar">
         <h1>Letai Factbase</h1>
         <nav>
-          <button>导入</button>
-          <button className="active">OCR 审核</button>
-          <button>候选事实</button>
+          <button>Import</button>
+          <button className="active">OCR Review</button>
+          <button>Candidate Facts</button>
           <button>Confirmed FC</button>
           <button>Fact Gateway</button>
         </nav>
@@ -195,13 +195,13 @@ function App() {
       <section className="review-layout">
         <header className="review-header">
           <div>
-            <h2>OCR 基础高亮审核</h2>
+            <h2>OCR Highlight Review</h2>
             <p>{status}</p>
           </div>
           <div className="header-actions">
-            <button onClick={() => void refresh()}>刷新</button>
+            <button onClick={() => void refresh()}>Refresh</button>
             <button disabled={!selectedPage} onClick={() => void runOCR()}>
-              运行 OCR
+              Run OCR
             </button>
           </div>
         </header>
@@ -247,12 +247,12 @@ function App() {
                   })}
               </div>
             ) : (
-              <div className="empty-state">暂无页面</div>
+              <div className="empty-state">No page available</div>
             )}
           </div>
           <aside className="candidate-panel">
             <h3>OCR Blocks</h3>
-            {pageBlocks.length === 0 && <p className="muted">当前页面暂无 OCR block。</p>}
+            {pageBlocks.length === 0 && <p className="muted">No OCR blocks on the selected page.</p>}
             {pageBlocks.map((block) => {
               const selected = block.ocr_block_uid === selectedBlockUid;
               const matchedEvidence = findEvidenceForBlock(block, evidence);
@@ -268,17 +268,17 @@ function App() {
                     <dt>Block</dt>
                     <dd>{block.ocr_block_uid}</dd>
                     <dt>Evidence</dt>
-                    <dd>{matchedEvidence?.evidence_uid ?? "未匹配"}</dd>
+                    <dd>{matchedEvidence?.evidence_uid ?? "Not matched"}</dd>
                   </dl>
                   <div className="actions">
-                    <button onClick={() => void createCandidate(block)}>创建候选事实</button>
+                    <button onClick={() => void createCandidate(block)}>Create candidate fact</button>
                   </div>
                 </article>
               );
             })}
             {selectedBlock && (
               <section className="selection-detail">
-                <h4>当前选择</h4>
+                <h4>Current Selection</h4>
                 <p>{selectedBlock.text}</p>
               </section>
             )}

@@ -11,7 +11,7 @@ from letai_factbase.main import app
 def _make_render_pdf(path: Path) -> bytes:
     document = fitz.open()
     page = document.new_page()
-    page.insert_text((72, 72), "页面渲染测试 PDF")
+    page.insert_text((72, 72), "Page render test PDF")
     document.save(path)
     document.close()
     return path.read_bytes()

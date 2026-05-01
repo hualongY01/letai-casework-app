@@ -10,8 +10,8 @@ from letai_factbase.main import app
 def _make_pdf(path: Path) -> bytes:
     document = fitz.open()
     page = document.new_page()
-    page.insert_text((72, 72), "PDF 测试材料：用于验证可提取文本 PDF parser。")
-    page.insert_text((72, 104), "本文件不代表真实案卷事实。")
+    page.insert_text((72, 72), "PDF test material for extractable-text parser validation.")
+    page.insert_text((72, 104), "This file does not represent real case facts.")
     document.save(path)
     document.close()
     return path.read_bytes()
@@ -43,4 +43,4 @@ def test_pdf_parse_creates_page_located_chunks() -> None:
     chunks = [chunk for chunk in chunks_response.json() if chunk["source_uid"] == source_uid]
     assert chunks
     assert chunks[0]["page_start"] == 1
-    assert "PDF parser" in chunks[0]["text"]
+    assert "extractable-text parser" in chunks[0]["text"]

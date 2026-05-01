@@ -1,91 +1,91 @@
 # Letai Local Factbase
 
-本项目是一个类 NotebookLM 的本地化替代应用，负责在本地处理勒泰项目的事实资料。
+This repository contains a local NotebookLM-like replacement for handling Letai case materials.
 
-它的目标不是复刻 NotebookLM 产品本体，也不是提供通用聊天或写作能力，而是把原始材料转化为可追溯、可引用、可审核、可人工确认的事实底座，保证后续 LLM / subagent 只能基于真实来源和明确状态的事实上下文工作，减少因大文件、扫描件或上下文超限导致的幻觉和无源结论。
+It is not intended to clone the NotebookLM product, and it is not a general chat or writing app. Its purpose is to turn source materials into traceable, citable, reviewable, human-confirmed factual context so that downstream LLMs and subagents work from grounded evidence instead of hallucinated summaries caused by large files, scanned PDFs, or context-window limits.
 
-核心链路：
+Core flow:
 
 ```text
-文件导入
-→ chunk / evidence
-→ 候选事实
-→ 人工逐条确认
-→ confirmed FC
-→ 只读 Vault 导出
-→ Fact Gateway mock
+File import
+-> chunk / evidence
+-> FactCandidate
+-> item-by-item human confirmation
+-> confirmed FC
+-> read-only Vault export
+-> Fact Gateway mock
 ```
 
-## 定位
+## Positioning
 
-- 类 NotebookLM 的本地化事实资料处理层。
-- 面向后续 LLM / subagent 的事实入口控制层。
-- SQLite 是唯一事实权威。
-- Vault Markdown 是只读投影，不允许人工直接编辑。
-- 原始文件导入后复制到 evidence archive，并计算 hash。
-- confirmed FC 不允许原地覆盖，只允许创建新版本。
-- 下游 subagent 在 v0.1 不正式接入，只通过 Fact Gateway mock 验证事实包格式和事实边界。
+- Local NotebookLM-like fact-material processing layer.
+- Fact-entry control layer for downstream LLMs and subagents.
+- SQLite is the sole source of truth.
+- Vault Markdown is a read-only projection and must not be manually edited.
+- Imported originals are copied into the evidence archive and hashed.
+- Confirmed FC records cannot be overwritten in place; later changes must create new versions.
+- v0.1 does not formally integrate downstream subagents. It only validates fact-pack format and boundaries through the Fact Gateway mock.
 
-## v0.1 范围
+## v0.1 Scope
 
-支持：
+Supported:
 
-- PDF，包括文本 PDF 和扫描 PDF
+- PDF, including text PDFs and scanned PDFs
 - PNG / JPG / JPEG / TIFF
 - DOCX
 - XLSX
 - TXT / Markdown
-- 本地 OCR
-- OCR 页面图片快照和 bbox 高亮审核
-- LLM 自动生成 FactCandidate，但只处理 chunk，不处理全量文件
-- LLM 调用前本地脱敏身份证号、手机号、银行账号、住址
-- LLM 调用日志记录 source、chunk、prompt_version、model、输出
-- 候选事实逐条人工确认
-- confirmed FC 只读 Vault 导出
+- Local OCR
+- OCR page snapshots and bbox highlight review
+- LLM-generated FactCandidate records, using chunks only, never full files
+- Local redaction before LLM calls for ID numbers, phone numbers, bank accounts, and addresses
+- LLM call logging with source, chunk, prompt version, model, and output
+- Item-by-item human confirmation for candidate facts
+- Read-only Vault export for confirmed FC records
 
-暂不做：
+Out of scope for v0.1:
 
-- 多用户权限
-- 云端部署
-- NotebookLM 上传
-- Gmail 自动读取
-- 完整 subagent 工作流
-- 自动正式报告
+- Multi-user permissions
+- Cloud deployment
+- NotebookLM upload
+- Gmail automation
+- Full subagent workflow integration
+- Automatic final reports
 
-## 仓库边界
+## Repository Boundary
 
-本仓库只保存应用代码、schema、文档和脱敏样例。
+This repository may contain only application code, schemas, documentation, and redacted examples.
 
-不得提交：
+Do not commit:
 
-- 真实案卷原文
-- Office / PDF / 压缩包原件
+- Real case source materials
+- Office / PDF / archive originals
 - `.env`
-- API Key / token
-- 未脱敏事实卡全量
-- 未脱敏邮件正文
+- API keys or tokens
+- Full unredacted fact-card datasets
+- Unredacted email bodies
 
-## 目录
+## Directory Layout
 
 ```text
-backend/      Python + FastAPI 后端
-frontend/     React + TypeScript 本地审核界面
-schemas/      JSON schema
-docs/         产品、架构、决策文档
+backend/      Python + FastAPI backend
+frontend/     React + TypeScript local review UI
+schemas/      JSON schemas
+docs/         Product, architecture, and decision documents
 ```
 
-## 下一步
+## Next Steps
 
-1. 实现 confirmed FC 版本更新流程。
-2. 用真实但可控材料回测导入、解析、渲染、OCR、候选事实确认流程。
-3. 补充导入/审核页面，不再依赖 API 手工调用。
-4. 后续视 Node/Vite 兼容性决定是否恢复 React/Vite 构建链路。
+1. Implement confirmed FC versioning.
+2. Backtest import, parsing, rendering, OCR, and candidate confirmation with controlled real materials.
+3. Add import/review UI controls so routine use does not depend on manual API calls.
+4. Revisit the React/Vite build chain after Node/Vite compatibility is resolved.
 
-## LLM 自动候选事实
+## LLM Candidate Extraction
 
-未配置 API Key 时，系统仍可完成导入、解析、OCR、索引、人工查看和人工创建候选事实，但不能自动提取候选事实。
+If no API key is configured, the system can still import, parse, OCR, index, display evidence, and let users create candidates manually. It cannot automatically extract candidates.
 
-配置示例：
+Configuration example:
 
 ```bash
 LETAI_LLM_PROVIDER=openai
@@ -93,21 +93,22 @@ LETAI_LLM_API_KEY=...
 LETAI_LLM_MODEL=...
 ```
 
-接口：
+Endpoints:
 
 ```text
 POST /api/chunks/{chunk_uid}/extract-candidates
 GET  /api/llm-call-logs
 ```
 
-约束：
+Rules:
 
-- LLM 只接收单个 chunk 的脱敏文本。
-- 不上传原始文件，不上传 OCR 图像。
-- LLM 只能生成 `FactCandidate`，不能生成 confirmed FC。
-- 每次调用写入 `LLMCallLog`。
+- The LLM receives only redacted text from a single chunk.
+- Original files are not uploaded.
+- OCR page images are not uploaded.
+- The LLM may create only `FactCandidate` records, never confirmed FC records.
+- Every call is recorded in `LLMCallLog`.
 
-## 后端本地命令
+## Local Backend Commands
 
 ```bash
 cd /Users/controller/Documents/Codex/letai-casework-app/backend
@@ -118,17 +119,17 @@ PYTHONPATH=src .venv/bin/python -m pytest
 PYTHONPATH=src .venv/bin/uvicorn letai_factbase.main:app --reload
 ```
 
-前端当前有两种入口：
+The frontend currently has two entry points:
 
-- `frontend/src/`：React + TypeScript 源码，已通过 `tsc` 类型检查。
-- `frontend/static/index.html`：无构建依赖的 OCR 审核页，可用本地静态服务器直接访问，当前作为 v0.1 可运行 UI。
+- `frontend/src/`: React + TypeScript source, validated by `tsc`.
+- `frontend/static/index.html`: no-build OCR review page, currently used as the runnable v0.1 UI.
 
 ```bash
 cd /Users/controller/Documents/Codex/letai-casework-app/frontend/static
 python3 -m http.server 5173 --bind 127.0.0.1
 ```
 
-服务启动后访问：
+Open after startup:
 
 ```text
 http://127.0.0.1:5173/

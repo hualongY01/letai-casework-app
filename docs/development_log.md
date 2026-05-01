@@ -1,69 +1,69 @@
-# 开发日志
+# Development Log
 
 ## 2026-04-30
 
-### 已完成
+### Completed
 
-- 创建后端 Python 虚拟环境：`backend/.venv`。
-- 安装核心后端依赖：FastAPI、SQLModel、Pydantic、PyMuPDF、Pillow 等。
-- 安装测试依赖：pytest、httpx。
-- 修正 SQLite 初始化逻辑：`init_db()` 建表前导入模型元数据。
-- 实现 `POST /api/sources/import`：
-  - 接收上传文件。
-  - 复制文件到 `storage/evidence_archive/{source_uid}/original/`。
-  - 计算 SHA-256 hash。
-  - 写入 `Source` 记录。
-- 实现 `GET /api/sources`。
-- 完成本地 smoke test：
-  - 上传 TXT 样例。
-  - API 返回 200。
-  - SQLite 可查询 source 记录。
-  - evidence archive 可看到归档文件。
-- 新增自动化测试：
+- Created the backend Python virtual environment at `backend/.venv`.
+- Installed backend dependencies: FastAPI, SQLModel, Pydantic, PyMuPDF, Pillow, and related packages.
+- Installed test dependencies: pytest and httpx.
+- Fixed SQLite initialization so `init_db()` imports model metadata before creating tables.
+- Implemented `POST /api/sources/import`:
+  - Accept uploaded files.
+  - Copy files into `storage/evidence_archive/{source_uid}/original/`.
+  - Calculate SHA-256 hashes.
+  - Write `Source` records.
+- Implemented `GET /api/sources`.
+- Completed a local smoke test:
+  - Uploaded a TXT sample.
+  - API returned 200.
+  - SQLite could query the source record.
+  - The evidence archive contained the archived file.
+- Added automated tests:
   - `tests/test_contracts.py`
   - `tests/test_source_import.py`
-- 实现 TXT/Markdown parser：
-  - 新增 `POST /api/sources/{source_uid}/parse`。
-  - 新增 `GET /api/chunks`。
-  - 新增 `GET /api/evidence`。
-  - 已归档文本可生成 `DocumentChunk` 和 `EvidenceSpan`。
-- 新增 `tests/test_text_parse.py`。
-- 实现可提取文本 PDF parser：
-  - 使用 PyMuPDF 按页提取文本。
-  - `DocumentChunk` 保留 `page_start/page_end`。
-  - `EvidenceSpan.locator_json` 保留页码和 parser 标记。
-- 实现 DOCX parser：
-  - 提取段落。
-  - 提取表格行。
-- 实现 XLSX parser：
-  - 使用 `openpyxl` 读取 workbook。
-  - 逐 sheet/row 生成 chunk。
-  - 保留 `sheet_name`、`row_start`、`row_end`。
-- 实现页面渲染：
-  - 新增 `POST /api/sources/{source_uid}/render-pages`。
-  - 新增 `GET /api/ocr-pages`。
-  - PDF 渲染为 `storage/evidence_archive/{source_uid}/pages/page-XXXX.png`。
-  - 图片文件规范化为 `page-0001.png`。
-  - 写入 `OCRPage`，保留 `page_image_path`、`page_image_hash`、`ocr_engine=pending`。
-- 安装本地 OCR 引擎：
+- Implemented the TXT/Markdown parser:
+  - Added `POST /api/sources/{source_uid}/parse`.
+  - Added `GET /api/chunks`.
+  - Added `GET /api/evidence`.
+  - Archived text can produce `DocumentChunk` and `EvidenceSpan` records.
+- Added `tests/test_text_parse.py`.
+- Implemented the extractable-text PDF parser:
+  - Uses PyMuPDF to extract text page by page.
+  - Preserves `page_start/page_end` on `DocumentChunk`.
+  - Preserves page locators and parser metadata in `EvidenceSpan.locator_json`.
+- Implemented the DOCX parser:
+  - Extracts paragraphs.
+  - Extracts table rows.
+- Implemented the XLSX parser:
+  - Uses `openpyxl` to read workbooks.
+  - Creates chunks per sheet/row.
+  - Preserves `sheet_name`, `row_start`, and `row_end`.
+- Implemented page rendering:
+  - Added `POST /api/sources/{source_uid}/render-pages`.
+  - Added `GET /api/ocr-pages`.
+  - Renders PDFs to `storage/evidence_archive/{source_uid}/pages/page-XXXX.png`.
+  - Normalizes image files to `page-0001.png`.
+  - Writes `OCRPage` records with `page_image_path`, `page_image_hash`, and `ocr_engine=pending`.
+- Installed the local OCR engine:
   - Homebrew `tesseract`
   - Homebrew `tesseract-lang`
   - Python `pytesseract`
-- 实现本地 OCR adapter：
-  - 新增 `POST /api/ocr-pages/{ocr_page_uid}/run-ocr`。
-  - 新增 `GET /api/ocr-blocks`。
-  - OCR 结果写入 `OCRBlock`。
-  - 每个 OCR block 同步生成 `EvidenceSpan`。
-  - `EvidenceSpan.locator_json` 保留 `bbox`、`ocr_engine`、`ocr_confidence`、页码。
-- 实现候选事实创建接口：
-  - 新增 `POST /api/candidates`。
-  - 从已入库 evidence 创建 `FactCandidate`。
-  - 校验 evidence 与 source 是否匹配。
-- 既有 `POST /api/candidates/confirm` 已完成最小人工确认闭环：
-  - `FactCandidate` 可确认成 `FactCard`。
-  - 允许修改候选事实文本。
-  - 保留 `edited_from_candidate` 与 `edit_reason`。
-- 新增测试：
+- Implemented the local OCR adapter:
+  - Added `POST /api/ocr-pages/{ocr_page_uid}/run-ocr`.
+  - Added `GET /api/ocr-blocks`.
+  - Writes OCR results to `OCRBlock`.
+  - Creates one `EvidenceSpan` per OCR block.
+  - Preserves `bbox`, `ocr_engine`, `ocr_confidence`, and page number in `EvidenceSpan.locator_json`.
+- Implemented the candidate fact creation API:
+  - Added `POST /api/candidates`.
+  - Creates `FactCandidate` records from stored evidence.
+  - Validates that evidence and source match.
+- Completed the minimal human confirmation loop through `POST /api/candidates/confirm`:
+  - A `FactCandidate` can be confirmed into a `FactCard`.
+  - Users may edit candidate text before confirmation.
+  - `edited_from_candidate` and `edit_reason` are preserved.
+- Added tests:
   - `tests/test_pdf_parse.py`
   - `tests/test_docx_parse.py`
   - `tests/test_xlsx_parse.py`
@@ -71,143 +71,143 @@
   - `tests/test_ocr_run.py`
   - `tests/test_candidate_flow.py`
 
-### 校验结果
+### Validation
 
 ```text
 10 passed in 0.84s
 ```
 
-### 未完成
+### Not Completed
 
-- 尚未实现 chunk/evidence/page render/OCR 去重和重跑策略。
-- 尚未实现 LLM FactCandidate 自动生成。
-- 尚未实现 confirmed FC 版本更新流程。
-- 尚未接入真实案卷材料。
+- Chunk/evidence/page render/OCR idempotency and rerun rules.
+- LLM-based FactCandidate extraction.
+- Confirmed FC versioning.
+- Real case-material ingestion.
 
-## 2026-05-01 · 幂等与 force 重跑
+## 2026-05-01 · Idempotency and Force Reruns
 
-### 已完成
+### Completed
 
-- `POST /api/sources/{source_uid}/parse` 增加幂等控制：
-  - 默认重复调用时返回已有 `DocumentChunk`，不重复生成 chunk/evidence。
-  - 支持 `force=true`。
-  - 若旧 evidence 已被 `FactCandidate` 或 `FactCard` 引用，`force=true` 返回 409。
-- `POST /api/sources/{source_uid}/render-pages` 增加幂等控制：
-  - 默认重复调用时返回已有 `OCRPage`，不重复渲染页面。
-  - 支持 `force=true`。
-  - 若旧 OCR evidence 已被候选事实或 FC 引用，拒绝重跑。
-- `POST /api/ocr-pages/{ocr_page_uid}/run-ocr` 增加幂等控制：
-  - 默认重复调用时返回已有 `OCRBlock`，不重复生成 OCR block/evidence。
-  - 支持 `force=true`。
-  - 若旧 OCR evidence 已被候选事实或 FC 引用，拒绝重跑。
-- 新增测试：
-  - `tests/test_idempotency.py`
-  - 覆盖 parse、render-pages、run-ocr 默认幂等。
-  - 覆盖 parse force 重建。
-  - 覆盖 evidence 已有候选事实依赖时 force 拒绝。
+- Added idempotency to `POST /api/sources/{source_uid}/parse`:
+  - Repeated calls return existing `DocumentChunk` records by default.
+  - Existing chunk/evidence records are not duplicated.
+  - Supports `force=true`.
+  - If old evidence is already referenced by `FactCandidate` or `FactCard`, `force=true` returns 409.
+- Added idempotency to `POST /api/sources/{source_uid}/render-pages`:
+  - Repeated calls return existing `OCRPage` records by default.
+  - Pages are not re-rendered unless forced.
+  - If old OCR evidence is referenced by a candidate or FC, rerun is rejected.
+- Added idempotency to `POST /api/ocr-pages/{ocr_page_uid}/run-ocr`:
+  - Repeated calls return existing `OCRBlock` records by default.
+  - OCR block/evidence records are not duplicated.
+  - Supports `force=true`.
+  - If old OCR evidence is referenced by a candidate or FC, rerun is rejected.
+- Added `tests/test_idempotency.py`:
+  - Covers default idempotency for parse, render-pages, and run-ocr.
+  - Covers forced parse rebuild.
+  - Covers force rejection when evidence is already referenced by a candidate.
 
-### 校验结果
+### Validation
 
 ```text
 backend: 15 passed
 frontend: tsc --noEmit passed
 ```
 
-### 未完成
+### Not Completed
 
-- 尚未实现 LLM FactCandidate 自动生成。
-- 尚未实现 confirmed FC 版本更新流程。
-- 尚未接入真实案卷材料。
+- LLM-based FactCandidate extraction.
+- Confirmed FC versioning.
+- Real case-material ingestion.
 
-## 2026-05-01 · LLM 自动候选事实提取
+## 2026-05-01 · LLM Candidate Fact Extraction
 
-### 已完成
+### Completed
 
-- 新增本地敏感信息脱敏层：
-  - 身份证号 → `[REDACTED_ID_NUMBER]`
-  - 手机号 → `[REDACTED_PHONE]`
-  - 12-30 位银行账号/长数字账号 → `[REDACTED_BANK_ACCOUNT]`
-  - `住址/家庭住址/联系地址/通讯地址` 标签后的地址 → `[REDACTED_ADDRESS]`
-- 新增 `LLMCallLog` 表：
-  - 记录 `source_uid`
-  - 记录 `chunk_uid`
-  - 记录 `prompt_version`
-  - 记录 `model`
-  - 记录脱敏后的输入文本
-  - 记录 LLM 输出 JSON
-  - 记录调用状态与错误信息
-- 新增 LLM 候选事实提取服务：
-  - 只处理单个 `DocumentChunk`。
-  - 不上传全量文件。
-  - 不上传 OCR 图像。
-  - prompt 版本为 `fact_candidate_extraction_v0.1`。
-  - 输出只能创建 `FactCandidate`，不能创建 confirmed FC。
-  - 同一 evidence、同一 proposed_fact_text、同一 model、同一 prompt_version 的候选事实会跳过重复创建。
-- 新增 API：
+- Added local sensitive-information redaction:
+  - ID numbers -> `[REDACTED_ID_NUMBER]`
+  - Phone numbers -> `[REDACTED_PHONE]`
+  - 12-30 digit bank accounts / long numeric accounts -> `[REDACTED_BANK_ACCOUNT]`
+  - Address fields -> `[REDACTED_ADDRESS]`
+- Added the `LLMCallLog` table:
+  - Records `source_uid`
+  - Records `chunk_uid`
+  - Records `prompt_version`
+  - Records `model`
+  - Records redacted input text
+  - Records LLM output JSON
+  - Records call status and errors
+- Added LLM candidate extraction:
+  - Processes one `DocumentChunk` at a time.
+  - Does not upload full files.
+  - Does not upload OCR images.
+  - Uses prompt version `fact_candidate_extraction_v0.1`.
+  - Creates only `FactCandidate` records, never confirmed FC records.
+  - Skips duplicate candidates for the same evidence, proposed fact text, model, and prompt version.
+- Added APIs:
   - `POST /api/chunks/{chunk_uid}/extract-candidates`
   - `GET /api/llm-call-logs`
-- 未配置 `LETAI_LLM_API_KEY` 或 `LETAI_LLM_MODEL` 时，自动提取接口返回 409；导入、解析、OCR、人工审核仍可使用。
-- 静态前端 `frontend/static/index.html` 新增：
-  - chunk 列表
-  - “LLM 提取候选事实”按钮
-  - 候选事实列表
-  - LLM 调用日志摘要
-- 新增测试：
-  - `tests/test_llm_extraction.py`
-  - 覆盖敏感信息脱敏。
-  - 覆盖 LLM 候选事实创建、调用日志、重复候选跳过。
-  - 覆盖未配置 API Key 时自动提取接口返回 409。
+- If `LETAI_LLM_API_KEY` or `LETAI_LLM_MODEL` is not configured, automatic extraction returns 409 while import, parsing, OCR, and manual review remain available.
+- Updated the static frontend `frontend/static/index.html` with:
+  - Chunk list
+  - "Extract candidates with LLM" action
+  - Candidate list
+  - LLM call-log summary
+- Added `tests/test_llm_extraction.py`:
+  - Covers sensitive-information redaction.
+  - Covers LLM candidate creation, call logs, and duplicate skipping.
+  - Covers the 409 response when no API key is configured.
 
-### 校验结果
+### Validation
 
 ```text
 backend: 18 passed
 frontend: tsc --noEmit passed
 ```
 
-### 未完成
+### Not Completed
 
-- 尚未实现 confirmed FC 版本更新流程。
-- 尚未接入真实案卷材料。
-- 静态前端仍缺文件导入与 parse/render 控制面板。
+- Confirmed FC versioning.
+- Real case-material ingestion.
+- Static frontend import and parse/render controls.
 
-## 2026-05-01 · OCR 审核 UI（较早阶段记录）
+## 2026-05-01 · OCR Review UI (Earlier Stage)
 
-### 已完成
+### Completed
 
-- 后端新增页面图片读取接口：
+- Added backend page-image retrieval:
   - `GET /api/ocr-pages/{ocr_page_uid}/image`
-  - 返回 OCR page PNG，供前端高亮审核使用。
-- 后端启用本地开发 CORS：
+  - Returns OCR page PNG files for frontend highlight review.
+- Enabled local development CORS:
   - `http://localhost:5173`
   - `http://127.0.0.1:5173`
-- 前端 React/TypeScript 源码接入真实 API：
+- Connected the React/TypeScript frontend source to real APIs:
   - `/api/ocr-pages`
   - `/api/ocr-blocks`
   - `/api/evidence`
   - `/api/ocr-pages/{ocr_page_uid}/image`
   - `/api/ocr-pages/{ocr_page_uid}/run-ocr`
   - `/api/candidates`
-- 前端实现真实 OCR 页面图像 + bbox overlay + block 列表 + 创建候选事实按钮。
-- 新增 `frontend/static/index.html`：
-  - 无构建依赖。
-  - 直接调用 FastAPI。
-  - 当前作为 v0.1 可运行 OCR 审核界面。
-- 前端 `npm run build` 调整为 TypeScript 类型检查。
+- Implemented real OCR page images, bbox overlay, block list, and candidate creation in the frontend.
+- Added `frontend/static/index.html`:
+  - No build step required.
+  - Calls FastAPI directly.
+  - Currently used as the runnable v0.1 frontend.
+- Changed frontend `npm run build` to TypeScript type checking.
 
-### 校验结果
+### Validation
 
 ```text
 backend: 10 passed
 frontend: tsc --noEmit passed
 ```
 
-### 说明
+### Notes
 
-- Vite build 在当前 Node 25 环境下会挂起，已暂时移出 v0.1 运行链路。
-- v0.1 当前用 `frontend/static/index.html` 作为可运行前端。
+- Vite build hangs under the current Node 25 environment, so it is temporarily outside the v0.1 runtime path.
+- v0.1 currently uses `frontend/static/index.html` as the runnable frontend.
 
-### 未完成
+### Not Completed
 
-- 尚未实现 confirmed FC 版本更新流程。
-- 尚未接入真实案卷材料。
+- Confirmed FC versioning.
+- Real case-material ingestion.

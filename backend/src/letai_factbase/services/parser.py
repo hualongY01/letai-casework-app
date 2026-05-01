@@ -270,14 +270,14 @@ def _parse_xlsx_file(session: Session, source_uid: str, archive_path: Path) -> l
                 continue
             if not headers:
                 headers = [value or f"Column {idx}" for idx, value in enumerate(values, start=1)]
-                text = "表头：" + " | ".join(headers)
+                text = "Header: " + " | ".join(headers)
             else:
                 pairs = []
                 for idx, value in enumerate(values, start=1):
                     if value:
                         header = headers[idx - 1] if idx - 1 < len(headers) else f"Column {idx}"
                         pairs.append(f"{header}: {value}")
-                text = "；".join(pairs)
+                text = "; ".join(pairs)
 
             locator = {
                 "source_uid": source_uid,

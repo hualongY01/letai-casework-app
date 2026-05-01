@@ -26,7 +26,13 @@ REDACTION_PATTERNS: list[tuple[str, re.Pattern[str], str]] = [
     ),
     (
         "address_label",
-        re.compile(r"((?:家庭住址|住址|联系地址|通讯地址)[:：\s]*)([^。\n\r；;]{4,80})"),
+        re.compile(
+            r"((?:Address|Home Address|Contact Address|Mailing Address|"
+            r"\u5bb6\u5ead\u4f4f\u5740|\u4f4f\u5740|"
+            r"\u8054\u7cfb\u5730\u5740|\u901a\u8baf\u5730\u5740)[:\uff1a\s]*)"
+            r"([^\u3002\n\r\uff1b;]{4,80})",
+            re.IGNORECASE,
+        ),
         r"\1[REDACTED_ADDRESS]",
     ),
 ]

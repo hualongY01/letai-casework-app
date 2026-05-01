@@ -9,9 +9,9 @@ def test_text_parse_creates_chunks_and_evidence() -> None:
     client = TestClient(app)
     text = "\n".join(
         [
-            "第一段：唐山勒泰测试材料。",
-            "第二段：用于验证 chunk 和 evidence 入库。",
-            "第三段：不代表真实案卷事实。",
+            "Paragraph one: Letai test material.",
+            "Paragraph two: validates chunk and evidence persistence.",
+            "Paragraph three: does not represent real case facts.",
         ]
     ).encode("utf-8")
 

@@ -9,12 +9,12 @@ from letai_factbase.main import app
 
 def _make_docx(path: Path) -> bytes:
     document = Document()
-    document.add_paragraph("DOCX 测试材料：用于验证段落解析。")
+    document.add_paragraph("DOCX test material for paragraph parsing.")
     table = document.add_table(rows=2, cols=2)
-    table.cell(0, 0).text = "字段"
-    table.cell(0, 1).text = "内容"
-    table.cell(1, 0).text = "用途"
-    table.cell(1, 1).text = "验证表格解析"
+    table.cell(0, 0).text = "Field"
+    table.cell(0, 1).text = "Content"
+    table.cell(1, 0).text = "Purpose"
+    table.cell(1, 1).text = "Verify table parsing"
     document.save(path)
     return path.read_bytes()
 
@@ -49,5 +49,5 @@ def test_docx_parse_creates_chunks_for_paragraphs_and_tables() -> None:
 
     chunks_response = client.get("/api/chunks")
     chunks = [chunk for chunk in chunks_response.json() if chunk["source_uid"] == source_uid]
-    assert any("DOCX 测试材料" in chunk["text"] for chunk in chunks)
-    assert any("验证表格解析" in chunk["text"] for chunk in chunks)
+    assert any("DOCX test material" in chunk["text"] for chunk in chunks)
+    assert any("Verify table parsing" in chunk["text"] for chunk in chunks)

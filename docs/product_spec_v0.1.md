@@ -1,51 +1,51 @@
-# 勒泰本地事实底座应用 · 产品规格 v0.1
+# Letai Local Factbase Product Spec v0.1
 
-## 一、产品定义
+## 1. Product Definition
 
-本应用是一个类 NotebookLM 的本地化替代应用，负责在本地处理事实资料，把原始材料转化为可追溯、可校验、可被后续 LLM / subagent 调用的事实资产。
+This application is a local NotebookLM-like replacement for factual material processing. It converts source materials into traceable, verifiable factual assets that downstream LLMs and subagents can consume.
 
-应用不定位为普通聊天工具、简单 RAG 问答系统、写作应用或 NotebookLM 产品复制品。其核心职责是控制事实入口：通过文件归档、解析/OCR、chunk/evidence、候选事实、人工确认和 Fact Gateway，保证后续 LLM / subagent 只消费有来源、可回溯、状态明确的事实上下文，防止未经来源验证的信息进入后续工作流。
+It is not a generic chat tool, a simple RAG Q&A app, a writing app, or a NotebookLM product clone. Its core responsibility is fact-entry control: source archiving, parsing/OCR, chunk/evidence creation, candidate facts, human confirmation, and Fact Gateway access. Downstream LLMs and subagents should consume only sourced, auditable, status-aware factual context.
 
-## 二、核心用户
+## 2. Core Users
 
-- 龙飞本人
-- Codex / LLM 执行环境
-- 后续 subagent 工作流
+- The project owner
+- Codex / LLM runtime
+- Future downstream subagent workflows
 
-v0.1 不面向外部律师、财务顾问、招商团队或债权人直接使用。
+v0.1 is not designed for direct use by outside counsel, financial advisors, commercial leasing teams, or creditors.
 
-## 三、输入
+## 3. Inputs
 
-### 原始材料
+### Source Materials
 
-- PDF，包括文本 PDF 和扫描 PDF
-- 图片：PNG、JPG、JPEG、TIFF
+- PDF, including text PDFs and scanned PDFs
+- Images: PNG, JPG, JPEG, TIFF
 - DOCX
 - XLSX
 - TXT / Markdown
 
-### 元数据
+### Metadata
 
-- 项目名称
-- 材料来源
-- 提交人
-- 接收日期
-- 材料类型
-- 保密级别
-- 所属业务线
+- Project name
+- Source origin
+- Submitter
+- Received date
+- Material type
+- Confidentiality level
+- Business line
 
-### 人工操作
+### Human Actions
 
-- 确认候选事实
-- 修改候选事实后确认
-- 驳回候选事实
-- 标记 OCR 错误
-- 生成 FR
-- 处理冲突事实
+- Confirm candidate facts
+- Edit candidate facts before confirmation
+- Reject candidate facts
+- Mark OCR errors
+- Generate FR records
+- Handle factual conflicts
 
-## 四、输出
+## 4. Outputs
 
-### 数据库输出
+### Database Outputs
 
 - Source
 - DocumentChunk
@@ -58,63 +58,63 @@ v0.1 不面向外部律师、财务顾问、招商团队或债权人直接使用
 - ConflictRecord
 - AuditLog
 
-### 文件输出
+### File Outputs
 
-- 只读 Vault Markdown
-- 入库报告
-- OCR 审核记录
-- 冲突事实报告
+- Read-only Vault Markdown
+- Ingestion report
+- OCR review record
+- Conflict report
 - Fact Gateway context pack
 
-## 五、主流程
+## 5. Main Flow
 
 ```text
-文件导入
-→ 复制到 evidence archive
-→ 计算 hash
-→ 解析文本或本地 OCR
-→ 生成 chunk / evidence
-→ LLM 提取 FactCandidate
-→ 引用和字段校验
-→ 人工逐条确认
-→ confirmed FC
-→ 只读 Vault 导出
-→ Fact Gateway mock
+File import
+-> copy into evidence archive
+-> calculate hash
+-> parse text or run local OCR
+-> create chunk / evidence
+-> LLM extracts FactCandidate records
+-> validate references and fields
+-> item-by-item human confirmation
+-> confirmed FC
+-> read-only Vault export
+-> Fact Gateway mock
 ```
 
-## 六、已确认规则
+## 6. Confirmed Rules
 
-1. SQLite 是唯一事实权威。
-2. Vault Markdown 只读，不允许人工直接编辑。
-3. 原始文件导入后复制到 evidence archive。
-4. 归档文件默认不允许物理删除，只允许逻辑状态变更。
-5. 新版 source 创建新 version，不覆盖旧版本。
-6. 扫描 PDF / 图片必须本地 OCR。
-7. OCR 结果必须保留页面图片快照和 bbox。
-8. v0.1 必须提供 OCR 基础高亮审核界面。
-9. 候选事实必须逐条人工确认后才能成为 confirmed FC。
-10. 人工确认时允许修改候选事实文本，但必须保留修改记录。
-11. confirmed FC 不允许原地覆盖，只能创建新版本。
-12. 冲突事实不自动裁决，由人工选择处理方式。
-13. source 权威等级默认内置，后续允许项目级配置。
-14. v0.1 采用通用事实分类 + 勒泰重整专项标签。
-15. v0.1 先做 Fact Gateway mock，不正式接入完整 subagent。
-16. LLM 只处理 chunk，不上传全量文件。
-17. 敏感信息默认本地脱敏后再发送给 LLM。
-18. OCR 图像默认不上传云端多模态模型。
+1. SQLite is the sole source of truth.
+2. Vault Markdown is read-only and must not be manually edited.
+3. Imported originals are copied into the evidence archive.
+4. Archived files are not physically deleted by default; only logical status changes are allowed.
+5. A new source version creates a new source record and does not overwrite the previous version.
+6. Scanned PDFs and images must use local OCR.
+7. OCR output must preserve page snapshots and bbox coordinates.
+8. v0.1 must provide a basic OCR highlight review UI.
+9. Candidate facts become confirmed FC records only after item-by-item human confirmation.
+10. Human confirmation may edit candidate text, but the edit record must be preserved.
+11. Confirmed FC records cannot be overwritten in place; new versions must be created.
+12. Factual conflicts are not auto-resolved; humans choose the handling path.
+13. Source authority levels use built-in defaults first and may become project-configurable later.
+14. v0.1 uses generic fact categories plus Letai-specific tags.
+15. v0.1 provides a Fact Gateway mock before full subagent integration.
+16. The LLM processes only chunks and never full files.
+17. Sensitive information is redacted locally before LLM calls.
+18. OCR images are not sent to cloud multimodal models by default.
 
-## 七、v0.1 验收
+## 7. v0.1 Acceptance
 
-用 3 到 5 份真实但可控材料回测，至少包括：
+Backtest with 3 to 5 controlled real materials, including at least:
 
-- 1 份扫描 PDF
-- 1 份可提取文本 PDF 或 DOCX
-- 1 份 Excel
-- 1 份已有 FC 可对照的材料
-- 可选：1 份存在事实冲突或新版/旧版关系的材料
+- 1 scanned PDF
+- 1 text PDF or DOCX
+- 1 Excel file
+- 1 material that can be compared against an existing FC
+- Optional: 1 material with factual conflict or source-version relationships
 
-验收链路：
+Acceptance flow:
 
 ```text
-导入 → OCR/解析 → chunk/evidence → candidate → 人工确认 → FC → Vault 导出 → Fact Gateway mock
+Import -> OCR/parse -> chunk/evidence -> candidate -> human confirmation -> FC -> Vault export -> Fact Gateway mock
 ```

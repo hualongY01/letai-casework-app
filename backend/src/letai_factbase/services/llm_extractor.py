@@ -214,12 +214,12 @@ def _client_from_settings() -> OpenAIResponsesClient:
 
 def _system_instructions() -> str:
     return (
-        "你是勒泰重整项目的信息专员候选事实提取器。"
-        "只从用户提供的 SOURCE_CHUNK 中提取客观事实候选。"
-        "不得使用外部知识，不得补全缺失日期、金额、人物、文件名或法律结论。"
-        "每条候选必须能被 supporting_quote 直接支持。"
-        "不得生成 confirmed fact，只能生成待人工审核的 FactCandidate。"
-        "如果资料不足以形成客观事实，返回空 facts 数组。"
+        "You are the candidate-fact extractor for the Letai local factbase. "
+        "Extract only objective candidate facts from the provided SOURCE_CHUNK. "
+        "Do not use external knowledge. Do not fill in missing dates, amounts, people, "
+        "file names, or legal conclusions. Each candidate must be directly supported "
+        "by supporting_quote. Do not create confirmed facts; create only FactCandidate "
+        "items for human review. If the source is insufficient, return an empty facts array."
     )
 
 
@@ -234,10 +234,10 @@ def _build_prompt(
         f"CHUNK_ID: {chunk_uid}\n"
         f"PROMPT_VERSION: {PROMPT_VERSION}\n"
         f"MAX_CANDIDATES: {max_candidates}\n\n"
-        "FACT_TYPES 可选：entity、date、amount、procedure、asset、liability、contract、"
-        "court_document、operation、risk_marker、other。\n"
-        "TAGS 应使用通用标签或勒泰专项标签，例如 restructuring、icbc_asia、cash_package、"
-        "asset_valuation、daily_report、ocr、letai。\n\n"
+        "Allowed FACT_TYPES: entity, date, amount, procedure, asset, liability, contract, "
+        "court_document, operation, risk_marker, other.\n"
+        "Use generic tags or Letai-specific tags, for example restructuring, icbc_asia, "
+        "cash_package, asset_valuation, daily_report, ocr, letai.\n\n"
         "SOURCE_CHUNK_BEGIN\n"
         f"{redacted_chunk_text}\n"
         "SOURCE_CHUNK_END"
@@ -257,7 +257,7 @@ def _output_schema() -> dict[str, Any]:
                     "properties": {
                         "proposed_fact_text": {
                             "type": "string",
-                            "description": "可由原文直接支持的客观事实候选。",
+                            "description": "Objective candidate fact directly supported by the source text.",
                         },
                         "fact_type": {
                             "type": "string",
@@ -281,7 +281,7 @@ def _output_schema() -> dict[str, Any]:
                         },
                         "supporting_quote": {
                             "type": "string",
-                            "description": "SOURCE_CHUNK 中直接支撑该候选事实的短引文。",
+                            "description": "Short quote from SOURCE_CHUNK that directly supports the candidate fact.",
                         },
                     },
                     "required": [
