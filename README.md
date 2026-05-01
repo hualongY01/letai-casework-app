@@ -1,8 +1,10 @@
-# Letai Casework App
+# Letai Local Factbase
 
-本项目是勒泰本地事实底座应用的代码仓库。
+本项目是一个类 NotebookLM 的本地化替代应用，负责在本地处理勒泰项目的事实资料。
 
-目标不是复制 NotebookLM，而是实现一个本地运行的 source-grounded factbase：
+它的目标不是复刻 NotebookLM 产品本体，也不是提供通用聊天或写作能力，而是把原始材料转化为可追溯、可引用、可审核、可人工确认的事实底座，保证后续 LLM / subagent 只能基于真实来源和明确状态的事实上下文工作，减少因大文件、扫描件或上下文超限导致的幻觉和无源结论。
+
+核心链路：
 
 ```text
 文件导入
@@ -16,11 +18,13 @@
 
 ## 定位
 
+- 类 NotebookLM 的本地化事实资料处理层。
+- 面向后续 LLM / subagent 的事实入口控制层。
 - SQLite 是唯一事实权威。
 - Vault Markdown 是只读投影，不允许人工直接编辑。
 - 原始文件导入后复制到 evidence archive，并计算 hash。
 - confirmed FC 不允许原地覆盖，只允许创建新版本。
-- 下游 subagent 在 v0.1 不正式接入，只通过 Fact Gateway mock 验证事实包。
+- 下游 subagent 在 v0.1 不正式接入，只通过 Fact Gateway mock 验证事实包格式和事实边界。
 
 ## v0.1 范围
 

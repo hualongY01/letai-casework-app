@@ -1,7 +1,7 @@
 [project]
 name = "letai-factbase"
 version = "0.1.0"
-description = "Local source-grounded factbase for Letai casework"
+description = "Local NotebookLM-like factbase for grounded Letai LLM workflows"
 requires-python = ">=3.9"
 dependencies = [
   "fastapi>=0.111.0",

@@ -2,9 +2,9 @@
 
 ## 一、产品定义
 
-本应用是本地运行的 source-grounded factbase，用于把原始材料转化为可追溯、可校验、可被后续 subagent 调用的事实资产。
+本应用是一个类 NotebookLM 的本地化替代应用，负责在本地处理事实资料，把原始材料转化为可追溯、可校验、可被后续 LLM / subagent 调用的事实资产。
 
-应用不定位为普通聊天工具、简单 RAG 问答系统或 NotebookLM 复制品。其核心职责是控制事实入口，防止未经来源验证的信息进入后续工作流。
+应用不定位为普通聊天工具、简单 RAG 问答系统、写作应用或 NotebookLM 产品复制品。其核心职责是控制事实入口：通过文件归档、解析/OCR、chunk/evidence、候选事实、人工确认和 Fact Gateway，保证后续 LLM / subagent 只消费有来源、可回溯、状态明确的事实上下文，防止未经来源验证的信息进入后续工作流。
 
 ## 二、核心用户
 
@@ -118,4 +118,3 @@ v0.1 不面向外部律师、财务顾问、招商团队或债权人直接使用
 ```text
 导入 → OCR/解析 → chunk/evidence → candidate → 人工确认 → FC → Vault 导出 → Fact Gateway mock
 ```
-
