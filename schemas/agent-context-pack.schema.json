@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://letai.local/schemas/agent-context-pack.schema.json",
+  "title": "AgentContextPack",
+  "type": "object",
+  "required": ["query", "facts", "open_fact_requests", "conflicts", "evidence", "usage_rules"],
+  "properties": {
+    "query": { "type": "string" },
+    "facts": { "type": "array", "items": { "type": "object" } },
+    "open_fact_requests": { "type": "array", "items": { "type": "object" } },
+    "conflicts": { "type": "array", "items": { "type": "object" } },
+    "evidence": { "type": "array", "items": { "type": "object" } },
+    "usage_rules": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}
+

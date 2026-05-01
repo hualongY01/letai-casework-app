@@ -1,0 +1,57 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+dist/
+build/
+npm-debug.log*
+
+# Local storage and databases
+storage/
+*.sqlite
+*.sqlite3
+*.db
+
+# Case materials
+case_data/
+raw/
+documents/
+attachments/
+inbox/
+exports/
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+*.pdf
+*.zip
+*.rar
+*.7z
+*.png
+*.jpg
+*.jpeg
+*.tiff
+
+# Secrets
+*.pem
+*.key
+*.token
+credentials.json
+oauth*.json
+
+# macOS
+.DS_Store
+

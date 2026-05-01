@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Letai Factbase OCR Review</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        color: #17202a;
+        background: #f6f7f9;
+      }
+
+      button {
+        border: 1px solid #ccd3dd;
+        background: #ffffff;
+        color: #17202a;
+        border-radius: 6px;
+        padding: 8px 10px;
+        cursor: pointer;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+      }
+
+      .app-shell {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        border-right: 1px solid #dce2ea;
+        background: #ffffff;
+        padding: 20px;
+      }
+
+      .sidebar h1 {
+        font-size: 20px;
+        margin: 0 0 22px;
+      }
+
+      .sidebar h2 {
+        font-size: 13px;
+        margin: 24px 0 10px;
+        color: #657385;
+        text-transform: uppercase;
+      }
+
+      .sidebar button {
+        width: 100%;
+        margin-bottom: 8px;
+        text-align: left;
+        overflow-wrap: anywhere;
+      }
+
+      .sidebar button.active {
+        background: #e8f1ff;
+        border-color: #8bb7ff;
+      }
+
+      .review-layout {
+        padding: 24px;
+      }
+
+      .review-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: start;
+      }
+
+      .review-header h2 {
+        margin: 0 0 6px;
+        font-size: 22px;
+      }
+
+      .review-header p {
+        margin: 0 0 18px;
+        color: #5d6978;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .review-grid {
+        display: grid;
+        grid-template-columns: minmax(520px, 1fr) 380px;
+        gap: 16px;
+        align-items: start;
+      }
+
+      .lower-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .page-preview,
+      .candidate-panel,
+      .list-panel {
+        border: 1px solid #dce2ea;
+        background: #ffffff;
+        border-radius: 8px;
+      }
+
+      .page-preview {
+        padding: 16px;
+        overflow: auto;
+      }
+
+      .image-stage {
+        position: relative;
+        display: inline-block;
+        max-width: 100%;
+        line-height: 0;
+        background: #fffdf8;
+      }
+
+      .page-image {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ccd3dd;
+        box-shadow: 0 8px 24px rgba(17, 30, 45, 0.08);
+      }
+
+      .bbox {
+        position: absolute;
+        padding: 0;
+        border: 2px solid #d64545;
+        background: rgba(214, 69, 69, 0.12);
+        border-radius: 0;
+      }
+
+      .bbox.selected,
+      .candidate-card.selected {
+        border-color: #2062d7;
+        background: rgba(32, 98, 215, 0.14);
+      }
+
+      .candidate-panel {
+        padding: 16px;
+      }
+
+      .candidate-panel h3,
+      .list-panel h3 {
+        margin: 0 0 12px;
+      }
+
+      .list-panel {
+        padding: 16px;
+        min-height: 260px;
+      }
+
+      .candidate-card,
+      .chunk-card {
+        border: 1px solid #dce2ea;
+        border-radius: 8px;
+        padding: 14px;
+        margin-bottom: 10px;
+        cursor: pointer;
+      }
+
+      .chunk-card {
+        cursor: default;
+      }
+
+      .status {
+        display: inline-block;
+        font-size: 12px;
+        border: 1px solid #e0b44c;
+        background: #fff6dd;
+        border-radius: 999px;
+        padding: 3px 8px;
+      }
+
+      dl {
+        display: grid;
+        grid-template-columns: 96px 1fr;
+        gap: 8px;
+        font-size: 14px;
+      }
+
+      dt {
+        color: #657385;
+      }
+
+      dd {
+        margin: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .muted {
+        color: #657385;
+      }
+
+      .empty-state {
+        display: grid;
+        min-height: 360px;
+        place-items: center;
+        color: #657385;
+      }
+
+      .excerpt {
+        max-height: 96px;
+        overflow: auto;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar">
+        <h1>Letai Factbase</h1>
+        <button class="active">OCR 审核</button>
+        <h2>OCR Pages</h2>
+        <div id="page-list"></div>
+      </aside>
+      <section class="review-layout">
+        <header class="review-header">
+          <div>
+            <h2>OCR 基础高亮审核</h2>
+            <p id="status">加载中</p>
+          </div>
+          <div class="header-actions">
+            <button id="refresh">刷新</button>
+            <button id="run-ocr">运行 OCR</button>
+          </div>
+        </header>
+        <div class="review-grid">
+          <div class="page-preview">
+            <div id="page-stage" class="empty-state">暂无页面</div>
+          </div>
+          <aside class="candidate-panel">
+            <h3>OCR Blocks</h3>
+            <div id="block-list"></div>
+          </aside>
+        </div>
+        <div class="lower-grid">
+          <section class="list-panel">
+            <h3>Chunks · 自动候选事实提取</h3>
+            <div id="chunk-list"></div>
+          </section>
+          <section class="list-panel">
+            <h3>候选事实 / LLM 调用</h3>
+            <div id="candidate-list"></div>
+            <div id="llm-log-list"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const API_BASE = window.LETAI_API_BASE || "http://127.0.0.1:8000/api";
+      const state = {
+        pages: [],
+        blocks: [],
+        evidence: [],
+        chunks: [],
+        candidates: [],
+        llmLogs: [],
+        selectedPageUid: "",
+        selectedBlockUid: "",
+        imageSize: null,
+      };
+
+      const statusEl = document.getElementById("status");
+      const pageListEl = document.getElementById("page-list");
+      const blockListEl = document.getElementById("block-list");
+      const pageStageEl = document.getElementById("page-stage");
+      const chunkListEl = document.getElementById("chunk-list");
+      const candidateListEl = document.getElementById("candidate-list");
+      const llmLogListEl = document.getElementById("llm-log-list");
+
+      async function fetchJson(path, init) {
+        const response = await fetch(`${API_BASE}${path}`, init);
+        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+        return response.json();
+      }
+
+      function setStatus(text) {
+        statusEl.textContent = text;
+      }
+
+      function parseJson(value) {
+        try {
+          return JSON.parse(value);
+        } catch {
+          return null;
+        }
+      }
+
+      function evidenceForBlock(block) {
+        return state.evidence.find((item) => {
+          if (item.ocr_page_uid !== block.ocr_page_uid) return false;
+          const locator = parseJson(item.locator_json);
+          return locator && locator.ocr_block_uid === block.ocr_block_uid;
+        });
+      }
+
+      async function refresh() {
+        setStatus("加载中");
+        const [pages, blocks, evidence, chunks, candidates, llmLogs] = await Promise.all([
+          fetchJson("/ocr-pages"),
+          fetchJson("/ocr-blocks"),
+          fetchJson("/evidence"),
+          fetchJson("/chunks"),
+          fetchJson("/candidates"),
+          fetchJson("/llm-call-logs"),
+        ]);
+        state.pages = pages;
+        state.blocks = blocks;
+        state.evidence = evidence;
+        state.chunks = chunks;
+        state.candidates = candidates;
+        state.llmLogs = llmLogs;
+        if (!state.selectedPageUid && pages[0]) state.selectedPageUid = pages[0].ocr_page_uid;
+        setStatus(pages.length ? "已加载" : "暂无 OCR 页面。请先导入文件并 render-pages。");
+        render();
+      }
+
+      async function runOCR() {
+        if (!state.selectedPageUid) return;
+        setStatus("OCR 运行中");
+        await fetchJson(`/ocr-pages/${state.selectedPageUid}/run-ocr`, { method: "POST" });
+        await refresh();
+        setStatus("OCR 已完成");
+      }
+
+      async function createCandidate(block) {
+        const page = state.pages.find((item) => item.ocr_page_uid === block.ocr_page_uid);
+        const evidence = evidenceForBlock(block);
+        if (!page || !evidence) {
+          setStatus("未找到该 OCR block 对应 evidence");
+          return;
+        }
+        await fetchJson("/candidates", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            source_uid: page.source_uid,
+            evidence_uid: evidence.evidence_uid,
+            original_candidate_text: block.text,
+            proposed_fact_text: block.text,
+            fact_type: "ocr_observation",
+            tags: ["ocr", "pending_review"],
+            llm_model: null,
+            prompt_version: null,
+          }),
+        });
+        setStatus("已创建候选事实");
+      }
+
+      async function extractCandidates(chunk) {
+        setStatus("LLM 候选事实提取中");
+        const result = await fetchJson(`/chunks/${chunk.chunk_uid}/extract-candidates`, {
+          method: "POST",
+        });
+        await refresh();
+        setStatus(
+          `已提取 ${result.candidates_created} 条候选事实，跳过重复 ${result.skipped_duplicates} 条`,
+        );
+      }
+
+      function render() {
+        renderPageList();
+        renderPageImage();
+        renderBlocks();
+        renderChunks();
+        renderCandidates();
+        renderLogs();
+      }
+
+      function renderPageList() {
+        pageListEl.innerHTML = "";
+        state.pages.forEach((page) => {
+          const button = document.createElement("button");
+          button.className = page.ocr_page_uid === state.selectedPageUid ? "active" : "";
+          button.textContent = `${page.source_uid} · p${page.page_number}`;
+          button.onclick = () => {
+            state.selectedPageUid = page.ocr_page_uid;
+            state.selectedBlockUid = "";
+            state.imageSize = null;
+            render();
+          };
+          pageListEl.appendChild(button);
+        });
+      }
+
+      function renderPageImage() {
+        const page = state.pages.find((item) => item.ocr_page_uid === state.selectedPageUid);
+        if (!page) {
+          pageStageEl.className = "empty-state";
+          pageStageEl.textContent = "暂无页面";
+          return;
+        }
+        pageStageEl.className = "image-stage";
+        pageStageEl.innerHTML = "";
+        const image = document.createElement("img");
+        image.className = "page-image";
+        image.alt = `OCR page ${page.page_number}`;
+        image.src = `${API_BASE}/ocr-pages/${page.ocr_page_uid}/image`;
+        image.onload = () => {
+          state.imageSize = {
+            naturalWidth: image.naturalWidth,
+            naturalHeight: image.naturalHeight,
+            renderedWidth: image.clientWidth,
+            renderedHeight: image.clientHeight,
+          };
+          drawBoxes();
+        };
+        pageStageEl.appendChild(image);
+      }
+
+      function drawBoxes() {
+        document.querySelectorAll(".bbox").forEach((node) => node.remove());
+        if (!state.imageSize) return;
+        const blocks = state.blocks.filter((block) => block.ocr_page_uid === state.selectedPageUid);
+        const scaleX = state.imageSize.renderedWidth / state.imageSize.naturalWidth;
+        const scaleY = state.imageSize.renderedHeight / state.imageSize.naturalHeight;
+        blocks.forEach((block) => {
+          const box = parseJson(block.bbox_json);
+          if (!box) return;
+          const button = document.createElement("button");
+          button.className = block.ocr_block_uid === state.selectedBlockUid ? "bbox selected" : "bbox";
+          button.style.left = `${box.x * scaleX}px`;
+          button.style.top = `${box.y * scaleY}px`;
+          button.style.width = `${box.width * scaleX}px`;
+          button.style.height = `${box.height * scaleY}px`;
+          button.onclick = () => {
+            state.selectedBlockUid = block.ocr_block_uid;
+            drawBoxes();
+            renderBlocks();
+          };
+          pageStageEl.appendChild(button);
+        });
+      }
+
+      function renderBlocks() {
+        blockListEl.innerHTML = "";
+        const blocks = state.blocks.filter((block) => block.ocr_page_uid === state.selectedPageUid);
+        if (!blocks.length) {
+          const empty = document.createElement("p");
+          empty.className = "muted";
+          empty.textContent = "当前页面暂无 OCR block。";
+          blockListEl.appendChild(empty);
+          return;
+        }
+        blocks.forEach((block) => {
+          const evidence = evidenceForBlock(block);
+          const card = document.createElement("article");
+          card.className =
+            block.ocr_block_uid === state.selectedBlockUid ? "candidate-card selected" : "candidate-card";
+          card.onclick = () => {
+            state.selectedBlockUid = block.ocr_block_uid;
+            drawBoxes();
+            renderBlocks();
+          };
+          card.innerHTML = `
+            <div class="status">${Number(block.confidence).toFixed(2)}</div>
+            <p>${escapeHtml(block.text)}</p>
+            <dl>
+              <dt>Block</dt><dd>${block.ocr_block_uid}</dd>
+              <dt>Evidence</dt><dd>${evidence ? evidence.evidence_uid : "未匹配"}</dd>
+            </dl>
+            <div class="actions"><button type="button">创建候选事实</button></div>
+          `;
+          card.querySelector("button").onclick = (event) => {
+            event.stopPropagation();
+            createCandidate(block).catch((error) => setStatus(`创建候选事实失败：${error.message}`));
+          };
+          blockListEl.appendChild(card);
+        });
+      }
+
+      function renderChunks() {
+        chunkListEl.innerHTML = "";
+        if (!state.chunks.length) {
+          const empty = document.createElement("p");
+          empty.className = "muted";
+          empty.textContent = "暂无 chunk。请先导入文件并 parse。";
+          chunkListEl.appendChild(empty);
+          return;
+        }
+        state.chunks.slice(0, 12).forEach((chunk) => {
+          const card = document.createElement("article");
+          card.className = "chunk-card";
+          card.innerHTML = `
+            <dl>
+              <dt>Chunk</dt><dd>${chunk.chunk_uid}</dd>
+              <dt>Source</dt><dd>${chunk.source_uid}</dd>
+            </dl>
+            <p class="excerpt">${escapeHtml(chunk.text.slice(0, 600))}</p>
+            <div class="actions"><button type="button">LLM 提取候选事实</button></div>
+          `;
+          card.querySelector("button").onclick = () =>
+            extractCandidates(chunk).catch((error) => setStatus(`LLM 提取失败：${error.message}`));
+          chunkListEl.appendChild(card);
+        });
+      }
+
+      function renderCandidates() {
+        candidateListEl.innerHTML = "";
+        const title = document.createElement("p");
+        title.className = "muted";
+        title.textContent = `候选事实：${state.candidates.length} 条`;
+        candidateListEl.appendChild(title);
+        state.candidates.slice(-6).reverse().forEach((candidate) => {
+          const card = document.createElement("article");
+          card.className = "chunk-card";
+          card.innerHTML = `
+            <div class="status">${candidate.status}</div>
+            <p>${escapeHtml(candidate.proposed_fact_text)}</p>
+            <dl>
+              <dt>Candidate</dt><dd>${candidate.candidate_uid}</dd>
+              <dt>Evidence</dt><dd>${candidate.evidence_uid}</dd>
+              <dt>Model</dt><dd>${candidate.llm_model || "manual"}</dd>
+            </dl>
+          `;
+          candidateListEl.appendChild(card);
+        });
+      }
+
+      function renderLogs() {
+        llmLogListEl.innerHTML = "";
+        const title = document.createElement("p");
+        title.className = "muted";
+        title.textContent = `LLM 调用：${state.llmLogs.length} 次`;
+        llmLogListEl.appendChild(title);
+        state.llmLogs.slice(-4).reverse().forEach((log) => {
+          const card = document.createElement("article");
+          card.className = "chunk-card";
+          card.innerHTML = `
+            <div class="status">${log.status}</div>
+            <dl>
+              <dt>Call</dt><dd>${log.llm_call_uid}</dd>
+              <dt>Chunk</dt><dd>${log.chunk_uid}</dd>
+              <dt>Prompt</dt><dd>${log.prompt_version}</dd>
+              <dt>Model</dt><dd>${log.model}</dd>
+            </dl>
+          `;
+          llmLogListEl.appendChild(card);
+        });
+      }
+
+      function escapeHtml(value) {
+        return value.replace(/[&<>"']/g, (char) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char],
+        );
+      }
+
+      document.getElementById("refresh").onclick = () =>
+        refresh().catch((error) => setStatus(`加载失败：${error.message}`));
+      document.getElementById("run-ocr").onclick = () =>
+        runOCR().catch((error) => setStatus(`OCR 失败：${error.message}`));
+
+      refresh().catch((error) => setStatus(`加载失败：${error.message}`));
+    </script>
+  </body>
+</html>

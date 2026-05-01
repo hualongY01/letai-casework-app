@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://letai.local/schemas/fact-candidate.schema.json",
+  "title": "FactCandidate",
+  "type": "object",
+  "required": [
+    "source_uid",
+    "evidence_uid",
+    "original_candidate_text",
+    "proposed_fact_text",
+    "fact_type",
+    "tags"
+  ],
+  "properties": {
+    "source_uid": { "type": "string" },
+    "evidence_uid": { "type": "string" },
+    "original_candidate_text": { "type": "string", "minLength": 1 },
+    "proposed_fact_text": { "type": "string", "minLength": 1 },
+    "fact_type": { "type": "string" },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "llm_model": { "type": ["string", "null"] },
+    "prompt_version": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}
+
