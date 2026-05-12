@@ -211,3 +211,36 @@ frontend: tsc --noEmit passed
 
 - Confirmed FC versioning.
 - Real case-material ingestion.
+
+## 2026-05-11 · Source Upload UI
+
+### Completed
+
+- Added source upload controls to the runnable static frontend:
+  - File picker
+  - Title input
+  - Imported-by input
+  - Authority-level input
+  - Upload action calling `POST /api/sources/import`
+- Added source listing to the frontend:
+  - Source UID
+  - Title
+  - Original filename
+  - MIME type
+  - Version and status
+- Added per-source actions:
+  - `Parse`, calling `POST /api/sources/{source_uid}/parse`
+  - `Render pages`, calling `POST /api/sources/{source_uid}/render-pages`
+- Kept all UI copy in English.
+
+### Validation
+
+```text
+manual API smoke: upload -> parse -> chunks
+frontend: static page served by local http.server
+```
+
+### Not Completed
+
+- Candidate-review UI for confirmation, rejection, and FR creation.
+- Real case-material ingestion.

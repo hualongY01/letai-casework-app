@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -29,6 +29,22 @@
       button:disabled {
         cursor: not-allowed;
         opacity: 0.55;
+      }
+
+      input {
+        border: 1px solid #ccd3dd;
+        border-radius: 6px;
+        color: #17202a;
+        font: inherit;
+        padding: 8px 10px;
+        width: 100%;
+      }
+
+      label {
+        color: #657385;
+        display: grid;
+        font-size: 13px;
+        gap: 6px;
       }
 
       .app-shell {
@@ -100,6 +116,14 @@
         align-items: start;
       }
 
+      .source-grid {
+        display: grid;
+        grid-template-columns: minmax(420px, 0.85fr) minmax(520px, 1.15fr);
+        gap: 16px;
+        margin-bottom: 16px;
+        align-items: start;
+      }
+
       .lower-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -109,6 +133,7 @@
 
       .page-preview,
       .candidate-panel,
+      .upload-panel,
       .list-panel {
         border: 1px solid #dce2ea;
         background: #ffffff;
@@ -155,8 +180,23 @@
       }
 
       .candidate-panel h3,
+      .upload-panel h3,
       .list-panel h3 {
         margin: 0 0 12px;
+      }
+
+      .upload-panel {
+        padding: 16px;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .form-grid .wide {
+        grid-column: 1 / -1;
       }
 
       .list-panel {
@@ -165,7 +205,8 @@
       }
 
       .candidate-card,
-      .chunk-card {
+      .chunk-card,
+      .source-card {
         border: 1px solid #dce2ea;
         border-radius: 8px;
         padding: 14px;
@@ -174,6 +215,10 @@
       }
 
       .chunk-card {
+        cursor: default;
+      }
+
+      .source-card {
         cursor: default;
       }
 
@@ -230,7 +275,10 @@
     <main class="app-shell">
       <aside class="sidebar">
         <h1>Letai Factbase</h1>
+        <button>Source Import</button>
         <button class="active">OCR Review</button>
+        <h2>Sources</h2>
+        <div id="source-list-compact"></div>
         <h2>OCR Pages</h2>
         <div id="page-list"></div>
       </aside>
@@ -245,6 +293,41 @@
             <button id="run-ocr">Run OCR</button>
           </div>
         </header>
+        <div class="source-grid">
+          <form id="upload-form" class="upload-panel">
+            <h3>Source Import</h3>
+            <div class="form-grid">
+              <label class="wide">
+                File
+                <input
+                  id="upload-file"
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.docx,.xlsx,.txt,.md,.markdown"
+                  required
+                />
+              </label>
+              <label class="wide">
+                Title
+                <input id="upload-title" type="text" placeholder="Defaults to filename" />
+              </label>
+              <label>
+                Imported by
+                <input id="upload-imported-by" type="text" value="manual_ui" />
+              </label>
+              <label>
+                Authority level
+                <input id="upload-authority-level" type="number" min="1" max="99" value="99" />
+              </label>
+            </div>
+            <div class="actions" style="margin-top: 12px">
+              <button type="submit">Upload Source</button>
+            </div>
+          </form>
+          <section class="list-panel">
+            <h3>Sources</h3>
+            <div id="source-list"></div>
+          </section>
+        </div>
         <div class="review-grid">
           <div class="page-preview">
             <div id="page-stage" class="empty-state">No page available</div>
@@ -271,6 +354,7 @@
     <script>
       const API_BASE = window.LETAI_API_BASE || "http://127.0.0.1:8000/api";
       const state = {
+        sources: [],
         pages: [],
         blocks: [],
         evidence: [],
@@ -283,6 +367,13 @@
       };
 
       const statusEl = document.getElementById("status");
+      const uploadFormEl = document.getElementById("upload-form");
+      const uploadFileEl = document.getElementById("upload-file");
+      const uploadTitleEl = document.getElementById("upload-title");
+      const uploadImportedByEl = document.getElementById("upload-imported-by");
+      const uploadAuthorityLevelEl = document.getElementById("upload-authority-level");
+      const sourceListEl = document.getElementById("source-list");
+      const sourceListCompactEl = document.getElementById("source-list-compact");
       const pageListEl = document.getElementById("page-list");
       const blockListEl = document.getElementById("block-list");
       const pageStageEl = document.getElementById("page-stage");
@@ -318,7 +409,8 @@
 
       async function refresh() {
         setStatus("Loading");
-        const [pages, blocks, evidence, chunks, candidates, llmLogs] = await Promise.all([
+        const [sources, pages, blocks, evidence, chunks, candidates, llmLogs] = await Promise.all([
+          fetchJson("/sources"),
           fetchJson("/ocr-pages"),
           fetchJson("/ocr-blocks"),
           fetchJson("/evidence"),
@@ -326,6 +418,7 @@
           fetchJson("/candidates"),
           fetchJson("/llm-call-logs"),
         ]);
+        state.sources = sources;
         state.pages = pages;
         state.blocks = blocks;
         state.evidence = evidence;
@@ -335,6 +428,47 @@
         if (!state.selectedPageUid && pages[0]) state.selectedPageUid = pages[0].ocr_page_uid;
         setStatus(pages.length ? "Loaded" : "No OCR pages. Import a file and run render-pages first.");
         render();
+      }
+
+      async function uploadSource(event) {
+        event.preventDefault();
+        const file = uploadFileEl.files && uploadFileEl.files[0];
+        if (!file) {
+          setStatus("Select a file before upload");
+          return;
+        }
+        setStatus("Uploading source");
+        const formData = new FormData();
+        formData.append("file", file);
+        const title = uploadTitleEl.value.trim();
+        if (title) formData.append("title", title);
+        formData.append("imported_by", uploadImportedByEl.value.trim() || "manual_ui");
+        formData.append("authority_level", uploadAuthorityLevelEl.value.trim() || "99");
+        const source = await fetchJson("/sources/import", {
+          method: "POST",
+          body: formData,
+        });
+        uploadFormEl.reset();
+        uploadImportedByEl.value = "manual_ui";
+        uploadAuthorityLevelEl.value = "99";
+        await refresh();
+        setStatus(`Uploaded ${source.source_uid}`);
+      }
+
+      async function parseSource(source) {
+        setStatus(`Parsing ${source.source_uid}`);
+        const result = await fetchJson(`/sources/${source.source_uid}/parse`, { method: "POST" });
+        await refresh();
+        setStatus(`Parsed ${source.source_uid}; chunks available: ${result.chunks_created}`);
+      }
+
+      async function renderSourcePages(source) {
+        setStatus(`Rendering pages for ${source.source_uid}`);
+        const result = await fetchJson(`/sources/${source.source_uid}/render-pages`, {
+          method: "POST",
+        });
+        await refresh();
+        setStatus(`Rendered ${result.pages_created} pages for ${source.source_uid}`);
       }
 
       async function runOCR() {
@@ -381,12 +515,55 @@
       }
 
       function render() {
+        renderSourceList();
         renderPageList();
         renderPageImage();
         renderBlocks();
         renderChunks();
         renderCandidates();
         renderLogs();
+      }
+
+      function renderSourceList() {
+        sourceListEl.innerHTML = "";
+        sourceListCompactEl.innerHTML = "";
+        if (!state.sources.length) {
+          const empty = document.createElement("p");
+          empty.className = "muted";
+          empty.textContent = "No imported sources.";
+          sourceListEl.appendChild(empty);
+          return;
+        }
+        state.sources.slice(-10).reverse().forEach((source) => {
+          const card = document.createElement("article");
+          card.className = "source-card";
+          card.innerHTML = `
+            <div class="status">${source.status}</div>
+            <p>${escapeHtml(source.title)}</p>
+            <dl>
+              <dt>Source</dt><dd>${source.source_uid}</dd>
+              <dt>File</dt><dd>${escapeHtml(source.original_filename)}</dd>
+              <dt>Type</dt><dd>${escapeHtml(source.mime_type)}</dd>
+              <dt>Version</dt><dd>${source.version}</dd>
+            </dl>
+            <div class="actions">
+              <button type="button" data-action="parse">Parse</button>
+              <button type="button" data-action="render">Render pages</button>
+            </div>
+          `;
+          card.querySelector('[data-action="parse"]').onclick = () =>
+            parseSource(source).catch((error) => setStatus(`Parse failed: ${error.message}`));
+          card.querySelector('[data-action="render"]').onclick = () =>
+            renderSourcePages(source).catch((error) => setStatus(`Render failed: ${error.message}`));
+          sourceListEl.appendChild(card);
+
+          const compactButton = document.createElement("button");
+          compactButton.textContent = `${source.source_uid} · ${source.original_filename}`;
+          compactButton.onclick = () => {
+            setStatus(`${source.source_uid}: ${source.title}`);
+          };
+          sourceListCompactEl.appendChild(compactButton);
+        });
       }
 
       function renderPageList() {
@@ -571,6 +748,14 @@
         refresh().catch((error) => setStatus(`Load failed: ${error.message}`));
       document.getElementById("run-ocr").onclick = () =>
         runOCR().catch((error) => setStatus(`OCR failed: ${error.message}`));
+      uploadFormEl.onsubmit = (event) =>
+        uploadSource(event).catch((error) => setStatus(`Upload failed: ${error.message}`));
+      uploadFileEl.onchange = () => {
+        const file = uploadFileEl.files && uploadFileEl.files[0];
+        if (file && !uploadTitleEl.value.trim()) {
+          uploadTitleEl.value = file.name.replace(/\.[^.]+$/, "");
+        }
+      };
 
       refresh().catch((error) => setStatus(`Load failed: ${error.message}`));
     </script>

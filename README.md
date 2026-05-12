@@ -35,6 +35,7 @@ Supported:
 - DOCX
 - XLSX
 - TXT / Markdown
+- Browser-based source upload
 - Local OCR
 - OCR page snapshots and bbox highlight review
 - LLM-generated FactCandidate records, using chunks only, never full files
@@ -78,7 +79,7 @@ docs/         Product, architecture, and decision documents
 
 1. Implement confirmed FC versioning.
 2. Backtest import, parsing, rendering, OCR, and candidate confirmation with controlled real materials.
-3. Add import/review UI controls so routine use does not depend on manual API calls.
+3. Add candidate-review UI controls for confirmation, rejection, and FR creation.
 4. Revisit the React/Vite build chain after Node/Vite compatibility is resolved.
 
 ## LLM Candidate Extraction
@@ -122,7 +123,7 @@ PYTHONPATH=src .venv/bin/uvicorn letai_factbase.main:app --reload
 The frontend currently has two entry points:
 
 - `frontend/src/`: React + TypeScript source, validated by `tsc`.
-- `frontend/static/index.html`: no-build OCR review page, currently used as the runnable v0.1 UI.
+- `frontend/static/index.html`: no-build runnable v0.1 UI with source upload, parse/render actions, OCR review, chunk display, and candidate extraction controls.
 
 ```bash
 cd /Users/controller/Documents/Codex/letai-casework-app/frontend/static
